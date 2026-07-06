@@ -1,0 +1,260 @@
+import React, { useState } from 'react';
+import type { Member } from '../types';
+import { Search, Filter, Copy, Check, AlertCircle } from 'lucide-react';
+
+interface MemberTableProps {
+  members: Member[];
+  selectedDate: number;
+  allDays: number[];
+  activeTab: 'ALL' | 'PENDING' | 'COMPLETED';
+  setActiveTab: (tab: 'ALL' | 'PENDING' | 'COMPLETED') => void;
+}
+
+export const MemberTable: React.FC<MemberTableProps> = ({
+  members,
+  selectedDate,
+  allDays,
+  activeTab,
+  setActiveTab,
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLeader, setSelectedLeader] = useState('ALL');
+  const [copied, setCopied] = useState(false);
+
+  // Extract unique team leaders
+  const leaders = ['ALL', ...Array.from(new Set(members.map(m => m.teamLeader)))];
+
+  // Filter members
+  const filteredMembers = members.filter(m => {
+    const matchesSearch = 
+      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.email.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesLeader = selectedLeader === 'ALL' || m.teamLeader === selectedLeader;
+    
+    const isPolledToday = m.attendance[selectedDate] === true;
+    const matchesTab = 
+      activeTab === 'ALL' ||
+      (activeTab === 'PENDING' && !isPolledToday) ||
+      (activeTab === 'COMPLETED' && isPolledToday);
+
+    return matchesSearch && matchesLeader && matchesTab;
+  });
+
+  // Copy pending list to clipboard for WhatsApp
+  const copyPendingToClipboard = () => {
+    const pendingList = members.filter(m => !m.attendance[selectedDate]);
+    if (pendingList.length === 0) return;
+
+    let text = `*Daftar Belum Polling CX 100 Iconnet (Tgl ${selectedDate} Juli)*:\n\n`;
+    pendingList.forEach((m, idx) => {
+      text += `${idx + 1}. *${m.name}* (${m.teamLeader})\n`;
+    });
+    text += `\n*Link Polling*: https://bit.ly/pollingcx100iconnet\nMohon segera mengisi polling ya. Terima kasih!`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const getStatusBadge = (isCompleted: boolean) => {
+    if (isCompleted) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400 border border-emerald-500/20">
+          Sudah Polling
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-2.5 py-0.5 text-xs font-medium text-rose-400 border border-rose-500/20">
+        Belum Polling
+      </span>
+    );
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-800/80 bg-slate-900/45 backdrop-blur-md overflow-hidden">
+      {/* Header and Controls */}
+      <div className="p-6 border-b border-slate-800/60">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h4 className="text-lg font-semibold text-white">Detail Partisipasi Sales</h4>
+            <p className="text-xs text-slate-500">Gunakan filter untuk mencari data sales spesifik</p>
+          </div>
+          {activeTab === 'PENDING' && filteredMembers.length > 0 && (
+            <button
+              onClick={copyPendingToClipboard}
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 active:scale-95 transition-all shadow-md shadow-indigo-500/15"
+            >
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? 'Tersalin!' : 'Salin Daftar WA'}
+            </button>
+          )}
+        </div>
+
+        {/* Filters */}
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {/* Search */}
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+              <Search size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="Cari nama atau email..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="block w-full rounded-xl border border-slate-800/80 bg-slate-950/40 py-2.5 pl-10 pr-4 text-sm text-slate-200 placeholder-slate-500 outline-none transition duration-200 focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/40"
+            />
+          </div>
+
+          {/* Filter Team Leader */}
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+              <Filter size={18} />
+            </div>
+            <select
+              value={selectedLeader}
+              onChange={e => setSelectedLeader(e.target.value)}
+              className="block w-full rounded-xl border border-slate-800/80 bg-slate-950/40 py-2.5 pl-10 pr-4 text-sm text-slate-200 outline-none transition duration-200 focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/40 appearance-none cursor-pointer"
+            >
+              {leaders.map(l => (
+                <option key={l} value={l} className="bg-slate-950 text-slate-200">
+                  {l === 'ALL' ? 'Semua Team Leader' : l}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Selection tabs */}
+          <div className="flex rounded-xl bg-slate-950/50 p-1 border border-slate-800/60">
+            <button
+              onClick={() => setActiveTab('ALL')}
+              className={`flex-1 rounded-lg py-1.5 text-center text-xs font-semibold transition ${
+                activeTab === 'ALL'
+                  ? 'bg-slate-800 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Semua ({members.filter(m => selectedLeader === 'ALL' || m.teamLeader === selectedLeader).length})
+            </button>
+            <button
+              onClick={() => setActiveTab('PENDING')}
+              className={`flex-1 rounded-lg py-1.5 text-center text-xs font-semibold transition ${
+                activeTab === 'PENDING'
+                  ? 'bg-rose-950/40 text-rose-400 shadow-sm border border-rose-900/30'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Belum ({members.filter(m => !m.attendance[selectedDate] && (selectedLeader === 'ALL' || m.teamLeader === selectedLeader)).length})
+            </button>
+            <button
+              onClick={() => setActiveTab('COMPLETED')}
+              className={`flex-1 rounded-lg py-1.5 text-center text-xs font-semibold transition ${
+                activeTab === 'COMPLETED'
+                  ? 'bg-emerald-950/40 text-emerald-400 shadow-sm border border-emerald-900/30'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Sudah ({members.filter(m => m.attendance[selectedDate] && (selectedLeader === 'ALL' || m.teamLeader === selectedLeader)).length})
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-slate-800/80 bg-slate-900/10">
+              <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider w-16">NO</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">TEAM LEADER</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">NAMA / EMAIL</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">STATUS (TGL {selectedDate})</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">RASIO</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">RIWAYAT BULANAN (JULI)</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800/50 bg-slate-950/10">
+            {filteredMembers.length > 0 ? (
+              filteredMembers.map((member) => (
+                <tr
+                  key={`${member.no}-${member.email}`}
+                  className="hover:bg-slate-900/20 transition-colors group"
+                >
+                  <td className="px-6 py-4 text-sm font-medium text-slate-500 font-mono">
+                    {member.no}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm font-medium text-slate-300">
+                      {member.teamLeader}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-white group-hover:text-indigo-400 transition-colors">
+                        {member.name}
+                      </span>
+                      <span className="text-xs text-slate-500 font-normal">
+                        {member.email}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    {getStatusBadge(member.attendance[selectedDate])}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="text-sm font-bold text-slate-300">
+                        {member.completionRate}%
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        ({member.totalCompleted}/{member.totalDays} hari)
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    {/* Calendar grid strip */}
+                    <div className="flex flex-wrap gap-1 max-w-[280px]">
+                      {allDays.map((day) => {
+                        const hasPolled = member.attendance[day];
+                        const isCurrent = day === selectedDate;
+                        return (
+                          <div
+                            key={day}
+                            title={`Tanggal ${day} Juli: ${hasPolled ? 'Sudah Polling' : 'Belum Polling'}`}
+                            className={`h-5 w-5 rounded flex items-center justify-center text-[8px] font-bold transition-all ${
+                              hasPolled
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-slate-900/80 text-slate-600 border border-slate-800'
+                            } ${
+                              isCurrent
+                                ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-slate-950 scale-110 z-10'
+                                : ''
+                            } cursor-help`}
+                          >
+                            {day}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center text-slate-500 gap-2">
+                    <AlertCircle size={32} className="text-slate-600" />
+                    <p className="text-sm font-medium">Tidak ada sales yang cocok dengan kriteria pencarian</p>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
