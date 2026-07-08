@@ -12,7 +12,9 @@ import {
   RefreshCw, 
   Calendar, 
   Database,
-  Info
+  Info,
+  Bell,
+  BellOff
 } from 'lucide-react';
 
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XsaPINo8qJW8IKoJaOkCk2ZLg_0W3ffyfQ4TZO54iLE/edit?gid=924029529#gid=924029529';
@@ -25,6 +27,10 @@ function App() {
   const [selectedDate, setSelectedDate] = useState<number>(3);
   const [isUsingFallback, setIsUsingFallback] = useState(false);
   const [activeTab, setActiveTab] = useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL');
+  
+  // Auto-refresh and Desktop Notification states
+  const [isAutoRefresh, setIsAutoRefresh] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   const loadData = async (forceSync = false) => {
     if (forceSync) {
@@ -53,9 +59,111 @@ function App() {
     }
   };
 
+  // Send pending list to WhatsApp number 082139958459
+  const sendPendingToWhatsApp = () => {
+    if (!data) return;
+    const pendingList = data.members.filter(m => !m.attendance[selectedDate]);
+    if (pendingList.length === 0) return;
+
+    let text = `*Daftar Belum Polling CX 100 Iconnet (Tgl ${selectedDate} Juli)*:\n\n`;
+    pendingList.forEach((m, idx) => {
+      text += `${idx + 1}. *${m.name}* (${m.teamLeader})\n`;
+    });
+    text += `\n*Link Polling*: https://bit.ly/pollingcx100iconnet\nMohon segera mengisi polling ya. Terima kasih!`;
+
+    // format: 082139958459 -> 6282139958459
+    const whatsappUrl = `https://wa.me/6282139958459?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  // Send pending list to email: triyono.sukma09@gmail.com
+  const sendPendingToEmail = () => {
+    if (!data) return;
+    const pendingList = data.members.filter(m => !m.attendance[selectedDate]);
+    if (pendingList.length === 0) return;
+
+    const subject = `Daftar Belum Polling CX 100 Iconnet (Tgl ${selectedDate} Juli)`;
+    let body = `Daftar Belum Polling CX 100 Iconnet (Tgl ${selectedDate} Juli):\n\n`;
+    pendingList.forEach((m, idx) => {
+      body += `${idx + 1}. ${m.name} (${m.teamLeader})\n`;
+    });
+    body += `\nLink Polling: https://bit.ly/pollingcx100iconnet\n\nMohon segera mengisi polling ya. Terima kasih!`;
+
+    const mailtoUrl = `mailto:triyono.sukma09@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl;
+  };
+
+  // Toggle browser notification permission and state
+  const toggleNotifications = async () => {
+    if (!('Notification' in window)) {
+      alert('Browser Anda tidak mendukung notifikasi desktop.');
+      return;
+    }
+
+    if (Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      setNotificationsEnabled(permission === 'granted');
+    } else if (Notification.permission === 'denied') {
+      alert('Akses notifikasi diblokir oleh browser. Silakan izinkan notifikasi dari pengaturan browser Anda.');
+      setNotificationsEnabled(false);
+    } else {
+      setNotificationsEnabled(prev => !prev);
+    }
+  };
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        setNotificationsEnabled(true);
+      } else if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          setNotificationsEnabled(permission === 'granted');
+        });
+      }
+    }
+  }, []);
+
+  // Auto load data on mount
   useEffect(() => {
     loadData();
   }, []);
+
+  // Auto refresh every 2 minutes (120,000ms)
+  useEffect(() => {
+    if (!isAutoRefresh) return;
+
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 120000);
+
+    return () => clearInterval(interval);
+  }, [isAutoRefresh]);
+
+  // Trigger browser notification when the data is loaded/synchronized
+  useEffect(() => {
+    if (!data || !notificationsEnabled) return;
+
+    // Filter pending members for the currently selected date
+    const pendingList = data.members.filter(m => !m.attendance[selectedDate]);
+    const pendingEmails = pendingList.map(m => m.email);
+
+    // Only notify if there are pending members
+    if (pendingEmails.length > 0) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const notification = new Notification(`Sales Belum Polling (Tgl ${selectedDate} Juli)`, {
+          body: `${pendingEmails.length} sales belum mengisi polling. Klik untuk kirim rekap WA ke 082139958459.`,
+          tag: `polling-pending-${selectedDate}-${Date.now()}`,
+          requireInteraction: true
+        });
+
+        notification.onclick = () => {
+          window.focus();
+          sendPendingToWhatsApp();
+        };
+      }
+    }
+  }, [data, selectedDate, notificationsEnabled]);
 
   if (loading) {
     return (
@@ -135,10 +243,43 @@ function App() {
             </div>
 
             {/* Actions Block */}
-            <div className="flex items-center gap-3 sm:self-center">
+            <div className="flex flex-wrap items-center gap-3 sm:self-center">
               <span className="hidden text-xs text-slate-500 md:inline font-mono">
                 Pembaruan: {data.lastUpdated}
               </span>
+              
+              {/* Auto Sync Toggle */}
+              <button
+                onClick={() => setIsAutoRefresh(!isAutoRefresh)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-95 cursor-pointer ${
+                  isAutoRefresh
+                    ? 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'
+                    : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-400'
+                }`}
+                title="Sinkronisasi otomatis setiap 2 menit"
+              >
+                <span className={`h-2.5 w-2.5 rounded-full ${isAutoRefresh ? 'bg-indigo-400 animate-pulse' : 'bg-slate-600'}`} />
+                Auto Sync {isAutoRefresh ? '2m ON' : 'OFF'}
+              </button>
+
+              {/* Notification Toggle */}
+              <button
+                onClick={toggleNotifications}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-95 cursor-pointer ${
+                  notificationsEnabled && (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted')
+                    ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-400'
+                    : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-400'
+                }`}
+                title="Notifikasi desktop jika ada data baru belum polling"
+              >
+                {notificationsEnabled && (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') ? (
+                  <Bell size={14} className="animate-bounce" />
+                ) : (
+                  <BellOff size={14} />
+                )}
+                Notifikasi {notificationsEnabled && (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') ? 'Aktif' : 'Nonaktif'}
+              </button>
+
               <button
                 onClick={() => loadData(true)}
                 disabled={isSyncing}
@@ -303,6 +444,8 @@ function App() {
             allDays={data.activeDays}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
+            sendPendingToWhatsApp={sendPendingToWhatsApp}
+            sendPendingToEmail={sendPendingToEmail}
           />
         </section>
       </main>

@@ -1,0 +1,116 @@
+Panduan Deploy React + Vite ke GitHub Pages
+
+1. Masuk ke folder project
+
+    cd D:\Dasboard_polling
+
+2. Install dependency
+
+    npm install
+
+3. Build project
+
+    npm run build
+
+Jika berhasil akan terbentuk folder dist/.
+
+4. Install gh-pages
+
+    npm install --save-dev gh-pages
+
+5. Edit package.json
+
+Tambahkan:
+
+    "homepage": "https://triyonosukma.github.io/dashboard-polling"
+
+Tambahkan script:
+
+    "scripts": {
+      "dev": "vite",
+      "build": "tsc -b && vite build",
+      "lint": "oxlint",
+      "preview": "vite preview",
+      "deploy": "gh-pages -d dist"
+    }
+
+6. Edit vite.config.ts
+
+    import { defineConfig } from 'vite'
+    import react from '@vitejs/plugin-react'
+
+    export default defineConfig({
+      plugins: [react()],
+      base: '/dashboard-polling/'
+    })
+
+7. Build ulang
+
+    npm run build
+
+8. Deploy
+
+    npm run deploy
+
+Jika berhasil akan muncul:
+
+    Published
+
+9. Aktifkan GitHub Pages
+
+Repository → Settings → Pages
+
+-   Source : Deploy from a branch
+-   Branch : gh-pages
+-   Folder : /(root)
+
+Klik Save.
+
+10. Akses website
+
+https://triyonosukma.github.io/dashboard-polling/
+
+Troubleshooting
+
+Halaman putih
+
+-   Pastikan base pada vite.config.ts adalah: /dashboard-polling/
+-   Tekan F12 → Console untuk melihat error.
+-   Jika ada resource 404, periksa path file dan gunakan
+    import.meta.env.BASE_URL bila memuat aset statis.
+
+Deploy ulang setelah ada perubahan
+
+    npm run build
+    npm run deploy
+
+Perintah yang sering digunakan
+
+Install dependency:
+
+    npm install
+
+Development:
+
+    npm run dev
+
+Build:
+
+    npm run build
+
+Preview:
+
+    npm run preview
+
+Deploy:
+
+    npm run deploy
+
+Hasil Akhir
+
+✓ Build berhasil
+✓ Branch gh-pages berhasil dibuat
+✓ GitHub Pages aktif
+✓ Website online di:
+
+https://triyonosukma.github.io/dashboard-polling/
