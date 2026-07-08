@@ -24,6 +24,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLeader, setSelectedLeader] = useState('ALL');
   const [copied, setCopied] = useState(false);
+  const [emailCopied, setEmailCopied] = useState(false);
 
   // Extract unique team leaders
   const leaders = ['ALL', ...Array.from(new Set(members.map(m => m.teamLeader)))];
@@ -60,6 +61,25 @@ export const MemberTable: React.FC<MemberTableProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  // Copy pending list details to clipboard and call sendPendingToEmail prop
+  const copyEmailToClipboardAndSend = () => {
+    const pendingList = members.filter(m => !m.attendance[selectedDate]);
+    if (pendingList.length === 0) return;
+
+    let body = `Daftar Belum Polling CX 100 Iconnet (Tgl ${selectedDate} Juli):\n\n`;
+    pendingList.forEach((m, idx) => {
+      body += `${idx + 1}. ${m.name} (${m.teamLeader})\n`;
+    });
+    body += `\nLink Polling: https://bit.ly/pollingcx100iconnet\n\nMohon segera mengisi polling ya. Terima kasih!`;
+
+    navigator.clipboard.writeText(body).then(() => {
+      setEmailCopied(true);
+      setTimeout(() => setEmailCopied(false), 3000);
+    });
+
+    sendPendingToEmail();
   };
 
   const getStatusBadge = (isCompleted: boolean) => {
@@ -109,11 +129,11 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 Kirim WA ke 082139958459
               </button>
               <button
-                onClick={sendPendingToEmail}
+                onClick={copyEmailToClipboardAndSend}
                 className="flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all text-sm font-semibold text-white px-4 py-2 shadow-md shadow-blue-600/20 cursor-pointer"
               >
-                <Mail size={16} />
-                Kirim Email ke triyono.sukma09@gmail.com
+                {emailCopied ? <Check size={16} /> : <Mail size={16} />}
+                {emailCopied ? 'Teks Email Tersalin!' : 'Kirim Email ke triyono.sukma09@gmail.com'}
               </button>
             </div>
           )}
