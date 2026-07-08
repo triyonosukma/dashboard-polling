@@ -67,7 +67,7 @@ function App() {
 
     let text = `*Daftar Belum Polling CX 100 Iconnet (Tgl ${selectedDate} Juli)*:\n\n`;
     pendingList.forEach((m, idx) => {
-      text += `${idx + 1}. *${m.name}* (${m.teamLeader})\n`;
+      text += `${idx + 1}. *${m.name}*\n`;
     });
     text += `\n*Link Polling*: https://bit.ly/pollingcx100iconnet\nMohon segera mengisi polling ya. Terima kasih!`;
 
