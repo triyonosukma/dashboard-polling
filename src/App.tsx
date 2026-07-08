@@ -151,8 +151,8 @@ function App() {
     // Only notify if there are pending members
     if (pendingEmails.length > 0) {
       if ('Notification' in window && Notification.permission === 'granted') {
-        const notification = new Notification(`Sales Belum Polling (Tgl ${selectedDate} Juli)`, {
-          body: `${pendingEmails.length} sales belum mengisi polling. Klik untuk kirim rekap WA ke 082139958459.`,
+        const notification = new Notification(`Belum Polling (Tgl ${selectedDate} Juli)`, {
+          body: `${pendingEmails.length} anggota belum mengisi polling. Klik untuk kirim rekap WA ke 082139958459.`,
           tag: `polling-pending-${selectedDate}-${Date.now()}`,
           requireInteraction: true
         });
@@ -237,7 +237,7 @@ function App() {
                   Dashboard Polling CX 100
                 </h1>
                 <p className="text-xs text-slate-400 font-normal">
-                  Monitoring Partisipasi Polling Harian Sales Iconnet
+                  Monitoring Partisipasi Polling Harian Iconnet
                 </p>
               </div>
             </div>
@@ -316,7 +316,7 @@ function App() {
         {/* Statistics Cards */}
         <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="Total Anggota Sales"
+            title="Total Anggota"
             value={totalMembers}
             icon={<Users size={24} />}
             description="Anggota aktif terdaftar"

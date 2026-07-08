@@ -1,0 +1,20 @@
+Rekomendasi agar tidak terjadi lagi
+
+Setiap kali mulai bekerja pada project, lakukan:
+
+git pull origin main
+
+baru kemudian:
+
+npm install
+npm run dev
+
+Setelah selesai mengubah kode:
+
+git add .
+git commit -m "Update dashboard"
+git push origin main
+npm run build
+npm run deploy
+
+Atau, jika nanti kita menggunakan GitHub Actions, Anda cukup melakukan git push origin main dan GitHub akan otomatis membangun serta memperbarui GitHub Pages tanpa perlu menjalankan npm run deploy secara manual.

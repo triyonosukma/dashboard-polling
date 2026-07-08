@@ -83,8 +83,8 @@ export const MemberTable: React.FC<MemberTableProps> = ({
       <div className="p-6 border-b border-slate-800/60">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h4 className="text-lg font-semibold text-white">Detail Partisipasi Sales</h4>
-            <p className="text-xs text-slate-500">Gunakan filter untuk mencari data sales spesifik</p>
+            <h4 className="text-lg font-semibold text-white">Detail Partisipasi Anggota</h4>
+            <p className="text-xs text-slate-500">Gunakan filter untuk mencari data spesifik</p>
           </div>
           {activeTab === 'PENDING' && filteredMembers.length > 0 && (
             <div className="flex flex-wrap gap-2">
@@ -273,7 +273,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 <td colSpan={6} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center text-slate-500 gap-2">
                     <AlertCircle size={32} className="text-slate-600" />
-                    <p className="text-sm font-medium">Tidak ada sales yang cocok dengan kriteria pencarian</p>
+                    <p className="text-sm font-medium">Tidak ada data yang cocok dengan kriteria pencarian</p>
                   </div>
                 </td>
               </tr>

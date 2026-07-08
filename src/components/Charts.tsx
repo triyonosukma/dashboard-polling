@@ -159,7 +159,7 @@ export const Charts: React.FC<ChartsProps> = ({ dailyStats, leaderStats, selecte
             },
             total: {
               show: true,
-              label: 'Total Sales',
+              label: 'Total Anggota',
               color: '#94a3b8',
               fontSize: '10px',
               fontWeight: 500,
@@ -194,7 +194,7 @@ export const Charts: React.FC<ChartsProps> = ({ dailyStats, leaderStats, selecte
     tooltip: {
       theme: 'dark',
       y: {
-        formatter: (val) => `${val} Sales`,
+        formatter: (val) => `${val} Anggota`,
       }
     }
   };
@@ -308,7 +308,7 @@ export const Charts: React.FC<ChartsProps> = ({ dailyStats, leaderStats, selecte
         <div className="rounded-2xl border border-slate-800/80 bg-slate-900/45 p-6 backdrop-blur-md lg:col-span-2">
           <div className="mb-4">
             <h4 className="text-lg font-semibold text-white">Tren Partisipasi Harian</h4>
-            <p className="text-xs text-slate-500">Perbandingan antara jumlah sales yang sudah vs belum mengisi polling</p>
+            <p className="text-xs text-slate-500">Perbandingan antara jumlah yang sudah vs belum mengisi polling</p>
           </div>
           <div className="h-[300px]">
             <Chart options={trendOptions} series={trendSeries} type="bar" height="100%" />
